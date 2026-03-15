@@ -1,0 +1,18 @@
+packages:
+  "recharts": "Powerful, responsive charts for data visualization"
+  "papaparse": "Client-side CSV parsing for batch transaction uploads"
+  "@types/papaparse": "TypeScript definitions for PapaParse"
+  "framer-motion": "Smooth animations for page transitions and elements"
+  "react-hook-form": "Form state management and validation"
+  "@hookform/resolvers": "Zod schema resolver for react-hook-form"
+  "clsx": "Utility for conditionally joining classNames"
+  "tailwind-merge": "Utility to merge Tailwind classes without style conflicts"
+
+images:
+  - path: "artifacts/fraud-detection/public/images/auth-bg.png"
+    description: "Abstract geometric cyber security background, dark navy and neon cyan, subtle grid, glowing nodes"
+    aspect_ratio: "16:9"
+
+notes:
+  - Using generated API hooks from @workspace/api-client-react
+  - Assumes backend returns proper HTTP statuses for TanStack Query to catch errors

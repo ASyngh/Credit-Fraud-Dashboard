@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Credit Card Fraud Detection"
+version = "1.0.0"
+id = "artifacts/fraud-detection"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+localPort = 23665
+name = "web"
+paths = ["/"]
+
+[services.development]
+run = "pnpm --filter @workspace/fraud-detection run dev"
+
+[services.env]
+PORT = "23665"
+BASE_PATH = "/"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/fraud-detection", "run", "build"]
+publicDir = "artifacts/fraud-detection/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"

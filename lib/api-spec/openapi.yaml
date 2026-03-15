@@ -1,15 +1,18 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Credit Card Fraud Detection API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: transactions
+    description: Transaction management and fraud detection
+  - name: insights
+    description: Analytics and insights
 paths:
   /healthz:
     get:
@@ -24,6 +27,113 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /transactions/predict:
+    post:
+      operationId: predictFraud
+      tags: [transactions]
+      summary: Predict fraud for a single transaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransactionInput"
+      responses:
+        "200":
+          description: Fraud prediction result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionResult"
+
+  /transactions/upload:
+    post:
+      operationId: uploadTransactions
+      tags: [transactions]
+      summary: Upload CSV of transactions for batch fraud analysis
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchTransactionInput"
+      responses:
+        "200":
+          description: Batch prediction results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchPredictionResult"
+
+  /transactions:
+    get:
+      operationId: listTransactions
+      tags: [transactions]
+      summary: List recent transactions with fraud flags
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+        - in: query
+          name: fraudOnly
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: List of transactions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionListResponse"
+
+  /insights/summary:
+    get:
+      operationId: getInsightsSummary
+      tags: [insights]
+      summary: Get overall fraud detection summary stats
+      responses:
+        "200":
+          description: Summary statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsightsSummary"
+
+  /insights/trends:
+    get:
+      operationId: getInsightsTrends
+      tags: [insights]
+      summary: Get fraud trend data over time
+      responses:
+        "200":
+          description: Trend data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrendsResponse"
+
+  /insights/feature-importance:
+    get:
+      operationId: getFeatureImportance
+      tags: [insights]
+      summary: Get feature importance scores
+      responses:
+        "200":
+          description: Feature importance data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeatureImportanceResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +144,240 @@ components:
       required:
         - status
 
+    TransactionInput:
+      type: object
+      properties:
+        amount:
+          type: number
+          description: Transaction amount in USD
+        merchantCategory:
+          type: string
+          description: Merchant category code
+        hour:
+          type: integer
+          description: Hour of day (0-23)
+        dayOfWeek:
+          type: integer
+          description: Day of week (0=Mon, 6=Sun)
+        distanceFromHome:
+          type: number
+          description: Distance from home in km
+        cardPresent:
+          type: boolean
+          description: Whether card was physically present
+        onlineTransaction:
+          type: boolean
+          description: Whether it was an online transaction
+        numTransactionsLast24h:
+          type: integer
+          description: Number of transactions in last 24 hours
+        avgTransactionAmount:
+          type: number
+          description: Average transaction amount for this card
+      required:
+        - amount
+        - merchantCategory
+        - hour
+        - dayOfWeek
+        - distanceFromHome
+        - cardPresent
+        - onlineTransaction
+        - numTransactionsLast24h
+        - avgTransactionAmount
+
+    PredictionResult:
+      type: object
+      properties:
+        transactionId:
+          type: string
+        fraudProbability:
+          type: number
+          description: Probability of fraud (0-1)
+        isFraud:
+          type: boolean
+        riskLevel:
+          type: string
+          enum: [low, medium, high, critical]
+        riskFactors:
+          type: array
+          items:
+            type: string
+        confidence:
+          type: number
+      required:
+        - transactionId
+        - fraudProbability
+        - isFraud
+        - riskLevel
+        - riskFactors
+        - confidence
+
+    BatchTransactionInput:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/TransactionInput"
+      required:
+        - transactions
+
+    BatchPredictionResult:
+      type: object
+      properties:
+        totalProcessed:
+          type: integer
+        fraudDetected:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/PredictionResult"
+        processingTimeMs:
+          type: number
+      required:
+        - totalProcessed
+        - fraudDetected
+        - results
+        - processingTimeMs
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+        amount:
+          type: number
+        merchantCategory:
+          type: string
+        merchantName:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        fraudProbability:
+          type: number
+        isFraud:
+          type: boolean
+        riskLevel:
+          type: string
+          enum: [low, medium, high, critical]
+        cardLast4:
+          type: string
+        location:
+          type: string
+      required:
+        - id
+        - amount
+        - merchantCategory
+        - merchantName
+        - timestamp
+        - fraudProbability
+        - isFraud
+        - riskLevel
+        - cardLast4
+        - location
+
+    TransactionListResponse:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Transaction"
+        total:
+          type: integer
+        page:
+          type: integer
+      required:
+        - transactions
+        - total
+        - page
+
+    InsightsSummary:
+      type: object
+      properties:
+        totalTransactions:
+          type: integer
+        totalFraudDetected:
+          type: integer
+        fraudRate:
+          type: number
+        totalAmountAnalyzed:
+          type: number
+        totalFraudAmount:
+          type: number
+        avgFraudProbability:
+          type: number
+        highRiskTransactions:
+          type: integer
+        savedAmount:
+          type: number
+      required:
+        - totalTransactions
+        - totalFraudDetected
+        - fraudRate
+        - totalAmountAnalyzed
+        - totalFraudAmount
+        - avgFraudProbability
+        - highRiskTransactions
+        - savedAmount
+
+    TrendPoint:
+      type: object
+      properties:
+        date:
+          type: string
+        total:
+          type: integer
+        fraudCount:
+          type: integer
+        fraudRate:
+          type: number
+        amount:
+          type: number
+      required:
+        - date
+        - total
+        - fraudCount
+        - fraudRate
+        - amount
+
+    TrendsResponse:
+      type: object
+      properties:
+        daily:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrendPoint"
+        weekly:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrendPoint"
+      required:
+        - daily
+        - weekly
+
+    FeatureImportance:
+      type: object
+      properties:
+        feature:
+          type: string
+        importance:
+          type: number
+        description:
+          type: string
+      required:
+        - feature
+        - importance
+        - description
+
+    FeatureImportanceResponse:
+      type: object
+      properties:
+        features:
+          type: array
+          items:
+            $ref: "#/components/schemas/FeatureImportance"
+      required:
+        - features
