@@ -8,6 +8,7 @@ import Dashboard from "@/pages/Dashboard";
 import Prediction from "@/pages/Prediction";
 import Upload from "@/pages/Upload";
 import Insights from "@/pages/Insights";
+import { ModelProvider } from "@/context/ModelContext";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,10 +35,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
+        <ModelProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <Router />
+          </WouterRouter>
+          <Toaster />
+        </ModelProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

@@ -1,13 +1,15 @@
 import { Layout } from "@/components/Layout";
-import { ShieldAlert, AlertTriangle, CheckCircle, DollarSign, TrendingUp, Activity } from "lucide-react";
+import { ShieldAlert, AlertTriangle, CheckCircle, DollarSign, TrendingUp, Activity, Cpu } from "lucide-react";
 import { 
   useGetInsightsSummary, 
   useGetInsightsTrends, 
-  useListTransactions 
+  useListTransactions,
+  useGetModelsInfo
 } from "@workspace/api-client-react";
 import { formatCurrency, formatPercentage } from "@/lib/utils";
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, BarChart, Bar, Cell } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { Link } from "wouter";
+import { useModel } from "@/context/ModelContext";
 
 function StatCard({ title, value, subtitle, icon: Icon, colorClass, loading }: any) {
   return (
@@ -35,9 +37,15 @@ function StatCard({ title, value, subtitle, icon: Icon, colorClass, loading }: a
 }
 
 export default function Dashboard() {
+  const { model } = useModel();
   const { data: summary, isLoading: isLoadingSummary } = useGetInsightsSummary();
   const { data: trends, isLoading: isLoadingTrends } = useGetInsightsTrends();
   const { data: transactionsRes, isLoading: isLoadingTransactions } = useListTransactions({ limit: 5 });
+  const { data: modelsInfo } = useGetModelsInfo();
+
+  const currentMetrics = model === 'random_forest' 
+    ? modelsInfo?.randomForest?.metrics 
+    : modelsInfo?.logisticRegression?.metrics;
 
   const customTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -63,8 +71,19 @@ export default function Dashboard() {
     <Layout>
       <div className="mb-8 flex justify-between items-end">
         <div>
-          <h1 className="text-4xl font-display font-bold text-foreground">Dashboard Overview</h1>
-          <p className="text-muted-foreground mt-2">Real-time credit card fraud analytics and monitoring.</p>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-4xl font-display font-bold text-foreground">Dashboard Overview</h1>
+            <div className="px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5">
+              <Cpu className="w-3.5 h-3.5" />
+              {model === 'random_forest' ? 'Random Forest' : 'Logistic Regression'}
+            </div>
+            {currentMetrics && (
+              <div className="px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-xs font-mono font-medium border border-border">
+                AUC: {(currentMetrics.auc * 100).toFixed(1)}%
+              </div>
+            )}
+          </div>
+          <p className="text-muted-foreground">Real-time credit card fraud analytics and monitoring.</p>
         </div>
         <Link 
           href="/prediction"

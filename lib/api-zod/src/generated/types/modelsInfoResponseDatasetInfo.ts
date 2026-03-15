@@ -6,11 +6,11 @@
  * OpenAPI spec version: 0.2.0
  */
 
-export interface TrendPoint {
-  hour?: number;
-  date?: string;
-  total: number;
-  fraudCount: number;
+export type ModelsInfoResponseDatasetInfo = {
+  totalRows: number;
+  fraudRows: number;
+  normalRows: number;
   fraudRate: number;
-  amount?: number;
-}
+  features: string;
+  trainingNote: string;
+};

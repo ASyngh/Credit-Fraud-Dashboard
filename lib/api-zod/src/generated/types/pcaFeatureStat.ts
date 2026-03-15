@@ -5,9 +5,12 @@
  * Credit Card Fraud Detection API with real ML models
  * OpenAPI spec version: 0.2.0
  */
-import type { FeatureImportance } from "./featureImportance";
 
-export interface FeatureImportanceResponse {
-  features: FeatureImportance[];
-  model: string;
+export interface PcaFeatureStat {
+  feature: string;
+  fraudMean: number;
+  normalMean: number;
+  fraudStd: number;
+  normalStd: number;
+  separation: number;
 }

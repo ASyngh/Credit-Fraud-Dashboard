@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { LayoutDashboard, ShieldAlert, UploadCloud, LineChart, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ModelSelector } from "./ModelSelector";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -25,7 +26,7 @@ export function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 py-8 px-4 flex flex-col gap-2">
+      <nav className="flex-1 py-8 px-4 flex flex-col gap-2 overflow-y-auto">
         <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 px-2">
           Menu
         </div>
@@ -56,6 +57,8 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      <ModelSelector />
 
       <div className="p-4 border-t border-border/50">
         <div className="bg-secondary/50 rounded-xl p-4 border border-border/50">

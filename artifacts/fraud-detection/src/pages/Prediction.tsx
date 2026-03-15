@@ -4,10 +4,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { usePredictFraud } from "@workspace/api-client-react";
-import { ShieldAlert, Cpu, AlertTriangle, Info, CheckCircle2 } from "lucide-react";
+import { ShieldAlert, Cpu, AlertTriangle, Info, CheckCircle2, SlidersHorizontal, Settings2 } from "lucide-react";
 import { cn, formatPercentage } from "@/lib/utils";
+import { useModel } from "@/context/ModelContext";
 
-const formSchema = z.object({
+const simpleFormSchema = z.object({
   amount: z.coerce.number().min(0, "Amount must be positive"),
   merchantCategory: z.string().min(1, "Required"),
   hour: z.coerce.number().min(0).max(23),
@@ -19,14 +20,36 @@ const formSchema = z.object({
   avgTransactionAmount: z.coerce.number().min(0),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+const expertFormSchema = z.object({
+  amount: z.coerce.number().min(0, "Amount must be positive"),
+  time: z.coerce.number().min(0).max(172792),
+  v1: z.coerce.number(),
+  v2: z.coerce.number(),
+  v3: z.coerce.number(),
+  v4: z.coerce.number(),
+  v5: z.coerce.number(),
+  v6: z.coerce.number(),
+  v7: z.coerce.number(),
+  v8: z.coerce.number(),
+  v9: z.coerce.number(),
+  v10: z.coerce.number(),
+  v11: z.coerce.number(),
+  v12: z.coerce.number(),
+  v13: z.coerce.number(),
+  v14: z.coerce.number(),
+});
+
+type SimpleFormValues = z.infer<typeof simpleFormSchema>;
+type ExpertFormValues = z.infer<typeof expertFormSchema>;
 
 export default function Prediction() {
+  const { model } = useModel();
   const { mutate: predictFraud, data: result, isPending } = usePredictFraud();
   const [submitted, setSubmitted] = useState(false);
+  const [mode, setMode] = useState<"simple" | "expert">("simple");
 
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const simpleForm = useForm<SimpleFormValues>({
+    resolver: zodResolver(simpleFormSchema),
     defaultValues: {
       amount: 150.00,
       merchantCategory: "retail",
@@ -40,24 +63,64 @@ export default function Prediction() {
     }
   });
 
-  const cardPresent = watch("cardPresent");
-  const onlineTransaction = watch("onlineTransaction");
+  const expertForm = useForm<ExpertFormValues>({
+    resolver: zodResolver(expertFormSchema),
+    defaultValues: {
+      amount: 150.00,
+      time: 3600,
+      v1: 0, v2: 0, v3: 0, v4: 0, v5: 0, v6: 0, v7: 0,
+      v8: 0, v9: 0, v10: 0, v11: 0, v12: 0, v13: 0, v14: 0,
+    }
+  });
 
-  const onSubmit = (data: FormValues) => {
-    predictFraud({ data }, {
+  const cardPresent = simpleForm.watch("cardPresent");
+  const onlineTransaction = simpleForm.watch("onlineTransaction");
+
+  const onSimpleSubmit = (data: SimpleFormValues) => {
+    predictFraud({ data: { ...data, model } }, {
+      onSuccess: () => setSubmitted(true)
+    });
+  };
+
+  const onExpertSubmit = (data: ExpertFormValues) => {
+    predictFraud({ data: { ...data, model } }, {
       onSuccess: () => setSubmitted(true)
     });
   };
 
   return (
     <Layout>
-      <div className="mb-8">
-        <h1 className="text-4xl font-display font-bold text-foreground">Real-time Inference</h1>
-        <p className="text-muted-foreground mt-2">Run individual transaction parameters through the ML model.</p>
+      <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-display font-bold text-foreground">Real-time Inference</h1>
+          <p className="text-muted-foreground mt-2">Run individual transaction parameters through the ML model.</p>
+        </div>
+        
+        <div className="flex bg-secondary/50 p-1 rounded-xl border border-border">
+          <button
+            onClick={() => setMode("simple")}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all",
+              mode === "simple" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            Simple Mode
+          </button>
+          <button
+            onClick={() => setMode("expert")}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all",
+              mode === "expert" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Settings2 className="w-4 h-4" />
+            Expert Mode (PCA)
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
         <div className="lg:col-span-7 bg-card rounded-2xl border border-border/50 shadow-xl overflow-hidden relative">
           <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-primary to-accent"></div>
           <div className="p-6">
@@ -67,120 +130,171 @@ export default function Prediction() {
               </div>
               <div>
                 <h3 className="text-lg font-display font-bold text-foreground">Transaction Details</h3>
-                <p className="text-sm text-muted-foreground">Enter features for evaluation</p>
+                <p className="text-sm text-muted-foreground">
+                  {mode === "simple" ? "Enter business features" : "Enter raw PCA components"}
+                </p>
               </div>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Amount (USD)</label>
-                  <input 
-                    type="number" step="0.01"
-                    className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                    {...register("amount")}
-                  />
-                  {errors.amount && <p className="text-xs text-destructive">{errors.amount.message}</p>}
+            {mode === "simple" ? (
+              <form onSubmit={simpleForm.handleSubmit(onSimpleSubmit)} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Amount (USD)</label>
+                    <input 
+                      type="number" step="0.01"
+                      className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      {...simpleForm.register("amount")}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Merchant Category</label>
+                    <select 
+                      className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none"
+                      {...simpleForm.register("merchantCategory")}
+                    >
+                      <option value="retail">Retail & Shopping</option>
+                      <option value="food">Food & Dining</option>
+                      <option value="travel">Travel & Transport</option>
+                      <option value="online">Online Services</option>
+                      <option value="entertainment">Entertainment</option>
+                      <option value="gas">Gas & Auto</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Hour of Day (0-23)</label>
+                    <input 
+                      type="number"
+                      className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      {...simpleForm.register("hour")}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Day of Week (0=Mon)</label>
+                    <input 
+                      type="number"
+                      className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      {...simpleForm.register("dayOfWeek")}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Distance from Home (km)</label>
+                    <input 
+                      type="number" step="0.1"
+                      className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      {...simpleForm.register("distanceFromHome")}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Past 24h Transactions</label>
+                    <input 
+                      type="number"
+                      className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      {...simpleForm.register("numTransactionsLast24h")}
+                    />
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-sm font-medium text-foreground">Average Transaction Amount (Historical)</label>
+                    <input 
+                      type="number" step="0.01"
+                      className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      {...simpleForm.register("avgTransactionAmount")}
+                    />
+                  </div>
                 </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Merchant Category</label>
-                  <select 
-                    className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none"
-                    {...register("merchantCategory")}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-border/50">
+                  <div 
+                    className={cn("p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between", cardPresent ? "bg-primary/10 border-primary" : "bg-background border-border hover:border-border/80")}
+                    onClick={() => simpleForm.setValue("cardPresent", !cardPresent)}
                   >
-                    <option value="retail">Retail & Shopping</option>
-                    <option value="food">Food & Dining</option>
-                    <option value="travel">Travel & Transport</option>
-                    <option value="online">Online Services</option>
-                    <option value="entertainment">Entertainment</option>
-                    <option value="gas">Gas & Auto</option>
-                    <option value="other">Other</option>
-                  </select>
+                    <div>
+                      <p className="font-medium text-foreground">Card Present</p>
+                      <p className="text-xs text-muted-foreground">Physical terminal scan</p>
+                    </div>
+                    <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center", cardPresent ? "border-primary" : "border-muted-foreground")}>
+                      {cardPresent && <div className="w-2.5 h-2.5 bg-primary rounded-full" />}
+                    </div>
+                  </div>
+
+                  <div 
+                    className={cn("p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between", onlineTransaction ? "bg-primary/10 border-primary" : "bg-background border-border hover:border-border/80")}
+                    onClick={() => simpleForm.setValue("onlineTransaction", !onlineTransaction)}
+                  >
+                    <div>
+                      <p className="font-medium text-foreground">Online Transaction</p>
+                      <p className="text-xs text-muted-foreground">E-commerce / Web</p>
+                    </div>
+                    <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center", onlineTransaction ? "border-primary" : "border-muted-foreground")}>
+                      {onlineTransaction && <div className="w-2.5 h-2.5 bg-primary rounded-full" />}
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Hour of Day (0-23)</label>
-                  <input 
-                    type="number"
-                    className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                    {...register("hour")}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Day of Week (0=Mon)</label>
-                  <input 
-                    type="number"
-                    className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                    {...register("dayOfWeek")}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Distance from Home (km)</label>
-                  <input 
-                    type="number" step="0.1"
-                    className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                    {...register("distanceFromHome")}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Past 24h Transactions</label>
-                  <input 
-                    type="number"
-                    className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                    {...register("numTransactionsLast24h")}
-                  />
-                </div>
-
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm font-medium text-foreground">Average Transaction Amount (Historical)</label>
-                  <input 
-                    type="number" step="0.01"
-                    className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                    {...register("avgTransactionAmount")}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-border/50">
-                <div 
-                  className={cn("p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between", cardPresent ? "bg-primary/10 border-primary" : "bg-background border-border hover:border-border/80")}
-                  onClick={() => setValue("cardPresent", !cardPresent)}
+                <button 
+                  type="submit" 
+                  disabled={isPending}
+                  className="w-full py-4 mt-6 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:transform-none"
                 >
-                  <div>
-                    <p className="font-medium text-foreground">Card Present</p>
-                    <p className="text-xs text-muted-foreground">Physical terminal scan</p>
+                  {isPending ? "Evaluating Model..." : "Analyze Transaction"}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={expertForm.handleSubmit(onExpertSubmit)} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Amount</label>
+                    <input 
+                      type="number" step="0.01"
+                      className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      {...expertForm.register("amount")}
+                    />
                   </div>
-                  <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center", cardPresent ? "border-primary" : "border-muted-foreground")}>
-                    {cardPresent && <div className="w-2.5 h-2.5 bg-primary rounded-full" />}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Time (seconds)</label>
+                    <input 
+                      type="number" step="1"
+                      className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      {...expertForm.register("time")}
+                    />
                   </div>
                 </div>
 
-                <div 
-                  className={cn("p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between", onlineTransaction ? "bg-primary/10 border-primary" : "bg-background border-border hover:border-border/80")}
-                  onClick={() => setValue("onlineTransaction", !onlineTransaction)}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-border/50">
+                  {Array.from({ length: 14 }).map((_, i) => (
+                    <div key={i} className="space-y-2 group relative">
+                      <label className="text-xs font-medium text-foreground flex items-center gap-1">
+                        V{i + 1}
+                        <Info className="w-3 h-3 text-muted-foreground" />
+                      </label>
+                      <input 
+                        type="number" step="0.01"
+                        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                        {...expertForm.register(`v${i + 1}` as keyof ExpertFormValues)}
+                      />
+                      <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity bg-secondary text-secondary-foreground text-xs p-2 rounded shadow-xl -top-10 left-0 w-48 pointer-events-none z-10">
+                        PCA component - values typically range from -5 to +5
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <button 
+                  type="submit" 
+                  disabled={isPending}
+                  className="w-full py-4 mt-6 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:transform-none"
                 >
-                  <div>
-                    <p className="font-medium text-foreground">Online Transaction</p>
-                    <p className="text-xs text-muted-foreground">E-commerce / Web</p>
-                  </div>
-                  <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center", onlineTransaction ? "border-primary" : "border-muted-foreground")}>
-                    {onlineTransaction && <div className="w-2.5 h-2.5 bg-primary rounded-full" />}
-                  </div>
-                </div>
-              </div>
-
-              <button 
-                type="submit" 
-                disabled={isPending}
-                className="w-full py-4 mt-6 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:transform-none"
-              >
-                {isPending ? "Evaluating Model..." : "Analyze Transaction"}
-              </button>
-            </form>
+                  {isPending ? "Evaluating Model..." : "Analyze Transaction"}
+                </button>
+              </form>
+            )}
           </div>
         </div>
 
@@ -205,7 +319,12 @@ export default function Prediction() {
             <div className="bg-card rounded-2xl border border-border/50 shadow-2xl overflow-hidden relative animate-in fade-in slide-in-from-bottom-8 duration-500">
               {result.isFraud && <div className="absolute inset-0 bg-destructive/5 pointer-events-none z-0" />}
               <div className="p-8 relative z-10 flex flex-col items-center border-b border-border/50">
-                <h3 className="text-lg font-display font-bold text-foreground mb-8 self-start">Model Output</h3>
+                <div className="flex justify-between w-full mb-8">
+                  <h3 className="text-lg font-display font-bold text-foreground">Model Output</h3>
+                  <span className="px-2.5 py-1 bg-secondary text-secondary-foreground text-xs font-medium rounded-md font-mono">
+                    {result.modelUsed}
+                  </span>
+                </div>
                 
                 {/* SVG Gauge */}
                 <div className="relative w-48 h-48 mb-6">

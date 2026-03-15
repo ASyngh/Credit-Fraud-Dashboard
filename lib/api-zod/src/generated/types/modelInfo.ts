@@ -6,8 +6,11 @@
  * OpenAPI spec version: 0.2.0
  */
 import type { FeatureImportance } from "./featureImportance";
+import type { ModelMetrics } from "./modelMetrics";
 
-export interface FeatureImportanceResponse {
-  features: FeatureImportance[];
-  model: string;
+export interface ModelInfo {
+  type: string;
+  description: string;
+  metrics: ModelMetrics;
+  featureImportance: FeatureImportance[];
 }
