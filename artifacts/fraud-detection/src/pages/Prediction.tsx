@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { usePredictFraud } from "@workspace/api-client-react";
-import { ShieldAlert, Cpu, AlertTriangle, Info, CheckCircle2, SlidersHorizontal, Settings2 } from "lucide-react";
+import { ShieldAlert, Cpu, AlertTriangle, Info, CheckCircle2, SlidersHorizontal, Settings2, Zap } from "lucide-react";
 import { cn, formatPercentage } from "@/lib/utils";
 import { useModel } from "@/context/ModelContext";
 
@@ -23,20 +23,13 @@ const simpleFormSchema = z.object({
 const expertFormSchema = z.object({
   amount: z.coerce.number().min(0, "Amount must be positive"),
   time: z.coerce.number().min(0).max(172792),
-  v1: z.coerce.number(),
-  v2: z.coerce.number(),
-  v3: z.coerce.number(),
-  v4: z.coerce.number(),
-  v5: z.coerce.number(),
-  v6: z.coerce.number(),
-  v7: z.coerce.number(),
-  v8: z.coerce.number(),
-  v9: z.coerce.number(),
-  v10: z.coerce.number(),
-  v11: z.coerce.number(),
-  v12: z.coerce.number(),
-  v13: z.coerce.number(),
-  v14: z.coerce.number(),
+  v1: z.coerce.number(), v2: z.coerce.number(), v3: z.coerce.number(), v4: z.coerce.number(),
+  v5: z.coerce.number(), v6: z.coerce.number(), v7: z.coerce.number(), v8: z.coerce.number(),
+  v9: z.coerce.number(), v10: z.coerce.number(), v11: z.coerce.number(), v12: z.coerce.number(),
+  v13: z.coerce.number(), v14: z.coerce.number(), v15: z.coerce.number(), v16: z.coerce.number(),
+  v17: z.coerce.number(), v18: z.coerce.number(), v19: z.coerce.number(), v20: z.coerce.number(),
+  v21: z.coerce.number(), v22: z.coerce.number(), v23: z.coerce.number(), v24: z.coerce.number(),
+  v25: z.coerce.number(), v26: z.coerce.number(), v27: z.coerce.number(), v28: z.coerce.number(),
 });
 
 type SimpleFormValues = z.infer<typeof simpleFormSchema>;
@@ -68,10 +61,27 @@ export default function Prediction() {
     defaultValues: {
       amount: 150.00,
       time: 3600,
-      v1: 0, v2: 0, v3: 0, v4: 0, v5: 0, v6: 0, v7: 0,
-      v8: 0, v9: 0, v10: 0, v11: 0, v12: 0, v13: 0, v14: 0,
+      v1: 0, v2: 0, v3: 0, v4: 0, v5: 0, v6: 0, v7: 0, v8: 0, v9: 0, v10: 0, v11: 0, v12: 0, v13: 0, v14: 0,
+      v15: 0, v16: 0, v17: 0, v18: 0, v19: 0, v20: 0, v21: 0, v22: 0, v23: 0, v24: 0, v25: 0, v26: 0, v27: 0, v28: 0,
     }
   });
+
+  const TOP_14_FEATURES = ["v14", "v10", "v12", "v17", "v4", "v3", "v11", "v16", "v2", "v9", "v7", "v21", "v19", "v18"];
+
+  const fillPresets = (isFraud: boolean) => {
+    expertForm.setValue("amount", isFraud ? 122.21 : 88.29);
+    expertForm.setValue("time", isFraud ? 40000 : 90000);
+    const fraudStats: Record<string, number> = {
+      v14: -6.97, v10: -5.68, v12: -6.26, v17: -6.67, v4: 4.54, v3: -7.03, v11: 3.80, v16: -4.14, v2: 3.62, v9: -2.58, v7: -5.57, v21: 0.71, v19: 0.68, v18: -2.25
+    };
+    const normalStats: Record<string, number> = {
+      v14: 0.01, v10: 0.01, v12: 0.01, v17: 0.01, v4: -0.01, v3: 0.01, v11: -0.01, v16: 0.01, v2: -0.01, v9: 0, v7: 0.01, v21: 0, v19: 0, v18: 0
+    };
+    
+    TOP_14_FEATURES.forEach(f => {
+      expertForm.setValue(f as keyof ExpertFormValues, isFraud ? fraudStats[f] : normalStats[f]);
+    });
+  };
 
   const cardPresent = simpleForm.watch("cardPresent");
   const onlineTransaction = simpleForm.watch("onlineTransaction");
@@ -213,7 +223,10 @@ export default function Prediction() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-border/50">
                   <div 
                     className={cn("p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between", cardPresent ? "bg-primary/10 border-primary" : "bg-background border-border hover:border-border/80")}
-                    onClick={() => simpleForm.setValue("cardPresent", !cardPresent)}
+                    onClick={() => {
+                      simpleForm.setValue("cardPresent", true);
+                      simpleForm.setValue("onlineTransaction", false);
+                    }}
                   >
                     <div>
                       <p className="font-medium text-foreground">Card Present</p>
@@ -226,7 +239,10 @@ export default function Prediction() {
 
                   <div 
                     className={cn("p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between", onlineTransaction ? "bg-primary/10 border-primary" : "bg-background border-border hover:border-border/80")}
-                    onClick={() => simpleForm.setValue("onlineTransaction", !onlineTransaction)}
+                    onClick={() => {
+                      simpleForm.setValue("onlineTransaction", true);
+                      simpleForm.setValue("cardPresent", false);
+                    }}
                   >
                     <div>
                       <p className="font-medium text-foreground">Online Transaction</p>
@@ -248,6 +264,16 @@ export default function Prediction() {
               </form>
             ) : (
               <form onSubmit={expertForm.handleSubmit(onExpertSubmit)} className="space-y-6">
+                 <div className="flex gap-4 mb-6">
+                    <button type="button" onClick={() => fillPresets(true)} className="flex-1 py-3 bg-destructive/10 text-destructive border border-destructive/30 hover:bg-destructive/20 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_hsl(var(--destructive)/0.2)] hover:shadow-[0_0_25px_hsl(var(--destructive)/0.4)] hover:-translate-y-0.5 backdrop-blur-md group relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-r from-destructive/0 via-destructive/10 to-destructive/0 -translate-x-full group-hover:animate-shimmer" />
+                      <Zap className="w-4 h-4" /> Typical Fraud Transaction
+                    </button>
+                    <button type="button" onClick={() => fillPresets(false)} className="flex-1 py-3 bg-success/10 text-success border border-success/30 hover:bg-success/20 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_hsl(var(--success)/0.2)] hover:shadow-[0_0_25px_hsl(var(--success)/0.4)] hover:-translate-y-0.5 backdrop-blur-md group relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-r from-success/0 via-success/10 to-success/0 -translate-x-full group-hover:animate-shimmer" />
+                      <CheckCircle2 className="w-4 h-4" /> Typical Normal Transaction
+                    </button>
+                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground">Amount</label>
@@ -268,23 +294,29 @@ export default function Prediction() {
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-border/50">
-                  {Array.from({ length: 14 }).map((_, i) => (
-                    <div key={i} className="space-y-2 group relative">
-                      <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                        V{i + 1}
+                  {TOP_14_FEATURES.map((feat) => (
+                    <div key={feat} className="space-y-2 group relative">
+                      <label className="text-xs font-medium text-foreground flex items-center gap-1 uppercase">
+                        {feat}
                         <Info className="w-3 h-3 text-muted-foreground" />
                       </label>
                       <input 
                         type="number" step="0.01"
                         className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
-                        {...expertForm.register(`v${i + 1}` as keyof ExpertFormValues)}
+                        {...expertForm.register(feat as keyof ExpertFormValues)}
                       />
                       <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity bg-secondary text-secondary-foreground text-xs p-2 rounded shadow-xl -top-10 left-0 w-48 pointer-events-none z-10">
-                        PCA component - values typically range from -5 to +5
+                        Top {feat.toUpperCase()} component - highly important
                       </div>
                     </div>
                   ))}
                 </div>
+
+                {Array.from({ length: 28 }, (_, i) => `v${i + 1}`).map((feat) => (
+                  !TOP_14_FEATURES.includes(feat) && (
+                    <input key={feat} type="hidden" {...expertForm.register(feat as keyof ExpertFormValues)} />
+                  )
+                ))}
 
                 <button 
                   type="submit" 

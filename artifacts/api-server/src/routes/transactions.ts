@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { transactionsTable } from "@workspace/db/schema";
 import { desc, eq, count } from "drizzle-orm";
 import { predictFraudML, type ModelType, type TransactionFeatures } from "../lib/mlModels.js";
+import { predictFraud } from "../lib/fraudModel.js";
 import { v4 as uuidv4 } from "uuid";
 
 const router: IRouter = Router();
@@ -64,7 +65,15 @@ router.post("/predict", async (req, res) => {
   };
 
   const txId = uuidv4();
-  const prediction = predictFraudML(features, modelType, txId);
+  let prediction: any;
+
+  if (body.v1 === undefined) {
+    prediction = predictFraud(features as any);
+    prediction.transactionId = txId;
+    prediction.modelUsed = "Heuristic Engine";
+  } else {
+    prediction = predictFraudML(features, modelType, txId);
+  }
 
   const category = body.merchantCategory || "retail";
   const names = MERCHANT_NAMES[category] || MERCHANT_NAMES.retail;

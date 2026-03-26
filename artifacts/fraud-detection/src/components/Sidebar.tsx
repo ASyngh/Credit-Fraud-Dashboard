@@ -21,7 +21,7 @@ export function Sidebar() {
             <Activity className="w-6 h-6 text-card" />
           </div>
           <span className="font-display font-bold text-lg text-foreground tracking-wide">
-            Aegis<span className="text-primary">Fraud</span>
+            Zero<span className="text-primary">Fraud</span>
           </span>
         </div>
       </div>

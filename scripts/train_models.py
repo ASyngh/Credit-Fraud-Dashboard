@@ -15,6 +15,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score
+from imblearn.over_sampling import SMOTE
 
 def main():
     csv_path = os.path.join(os.path.dirname(__file__),
@@ -99,14 +100,19 @@ def main():
         X, y, test_size=0.2, random_state=42, stratify=y
     )
 
+    print("Applying SMOTE to balance the training dataset...")
+    smote = SMOTE(random_state=42)
+    X_train_res, y_train_res = smote.fit_resample(X_train, y_train)
+    print(f"SMOTE complete. New training shape: {X_train_res.shape}")
+
     scaler = StandardScaler()
-    X_train_s = scaler.fit_transform(X_train)
+    X_train_s = scaler.fit_transform(X_train_res)
     X_test_s = scaler.transform(X_test)
 
     # ─── Logistic Regression ──────────────────────────────────────────────────
     print("Training Logistic Regression...")
-    lr = LogisticRegression(max_iter=1000, class_weight='balanced', C=0.1, solver='lbfgs')
-    lr.fit(X_train_s, y_train)
+    lr = LogisticRegression(max_iter=1000, C=0.1, solver='lbfgs')
+    lr.fit(X_train_s, y_train_res)
 
     lr_probs = lr.predict_proba(X_test_s)[:, 1]
     lr_preds = (lr_probs >= 0.5).astype(int)
@@ -141,10 +147,10 @@ def main():
     # ─── Random Forest ────────────────────────────────────────────────────────
     print("Training Random Forest...")
     rf = RandomForestClassifier(
-        n_estimators=100, max_depth=10, class_weight='balanced',
+        n_estimators=100, max_depth=10,
         n_jobs=-1, random_state=42, min_samples_split=10
     )
-    rf.fit(X_train, y_train)
+    rf.fit(X_train_res, y_train_res)
 
     rf_probs = rf.predict_proba(X_test)[:, 1]
     rf_preds = (rf_probs >= 0.5).astype(int)

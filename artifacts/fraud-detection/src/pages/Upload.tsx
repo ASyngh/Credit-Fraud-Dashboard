@@ -143,10 +143,24 @@ export default function Upload() {
         }
 
         const rows = results.data as Record<string, string>[];
-        setRowCount(rows.length);
-        const mapped = rows.map(parseKaggleRow);
+        const MAX_ROWS = 5000;
+        let mapped = rows.map(parseKaggleRow);
+        
+        if (mapped.length > MAX_ROWS) {
+          mapped = mapped.slice(0, MAX_ROWS);
+          setRowCount(MAX_ROWS);
+        } else {
+          setRowCount(mapped.length);
+        }
 
-        uploadBatch({ data: { transactions: mapped as any, model: selectedModel as any } });
+        uploadBatch(
+          { data: { transactions: mapped as any, model: selectedModel as any } },
+          {
+            onError: (err: any) => {
+              setFormatError(`Server rejected the file: ${err?.message || "Unknown Network Error"}`);
+            }
+          }
+        );
       },
       error: () => {
         setIsParsing(false);
@@ -268,7 +282,7 @@ export default function Upload() {
             <span>•</span>
             <span>Columns: Time, V1–V28, Amount</span>
             <span>•</span>
-            <span>No row limit</span>
+            <span>Max 5,000 rows</span>
           </div>
         </div>
       )}

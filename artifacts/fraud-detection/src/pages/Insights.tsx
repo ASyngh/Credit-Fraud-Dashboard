@@ -101,7 +101,7 @@ export default function Insights() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground text-sm">Base Fraud Rate</span>
-                  <span className="font-bold text-foreground">{fraudPatterns ? formatPercentage(fraudPatterns.datasetSummary.fraudRate) : "-"}</span>
+                  <span className="font-bold text-foreground">{fraudPatterns?.datasetSummary?.fraudRate != null ? formatPercentage(fraudPatterns.datasetSummary.fraudRate) : "-"}</span>
                 </div>
               </div>
             </div>
@@ -110,14 +110,14 @@ export default function Insights() {
                <div className="bg-card rounded-xl p-4 border border-border/50 shadow flex flex-col justify-center items-center text-center">
                  <p className="text-xs text-muted-foreground mb-1">Normal Avg</p>
                  <p className="text-xl font-bold text-foreground">
-                   {fraudPatterns ? formatCurrency(fraudPatterns.amountDistribution.normal.mean) : "-"}
+                   {fraudPatterns?.amountDistribution?.normal?.mean != null ? formatCurrency(fraudPatterns.amountDistribution.normal.mean) : "-"}
                  </p>
                </div>
                <div className="bg-card rounded-xl p-4 border border-destructive/30 shadow flex flex-col justify-center items-center text-center relative overflow-hidden">
                  <div className="absolute inset-0 bg-destructive/5" />
                  <p className="text-xs text-destructive mb-1 relative z-10">Fraud Avg</p>
                  <p className="text-xl font-bold text-foreground relative z-10">
-                   {fraudPatterns ? formatCurrency(fraudPatterns.amountDistribution.fraud.mean) : "-"}
+                   {fraudPatterns?.amountDistribution?.fraud?.mean != null ? formatCurrency(fraudPatterns.amountDistribution.fraud.mean) : "-"}
                  </p>
                </div>
             </div>
