@@ -177,15 +177,15 @@ export default function Insights() {
                     </thead>
                     <tbody className="divide-y divide-border/50">
                       {['AUC', 'F1 Score', 'Precision', 'Recall', 'Accuracy'].map((metric, i) => {
-                        const key = metric === 'F1 Score' ? 'f1' : metric.toLowerCase() as keyof typeof modelsInfo.randomForest.metrics;
+                        const key = (metric === 'F1 Score' ? 'f1' : metric.toLowerCase()) as any;
                         return (
                           <tr key={i} className="hover:bg-secondary/10 transition-colors">
                             <td className="px-4 py-3 font-medium text-foreground">{metric}</td>
                             <td className={`px-4 py-3 font-mono ${model === 'random_forest' ? 'font-bold text-primary' : 'text-muted-foreground'}`}>
-                              {formatPercentage(modelsInfo?.randomForest?.metrics?.[key] as number)}
+                              {formatPercentage((modelsInfo?.randomForest?.metrics as any)?.[key] as number)}
                             </td>
                             <td className={`px-4 py-3 font-mono ${model === 'logistic_regression' ? 'font-bold text-primary' : 'text-muted-foreground'}`}>
-                              {formatPercentage(modelsInfo?.logisticRegression?.metrics?.[key] as number)}
+                              {formatPercentage((modelsInfo?.logisticRegression?.metrics as any)?.[key] as number)}
                             </td>
                           </tr>
                         );
