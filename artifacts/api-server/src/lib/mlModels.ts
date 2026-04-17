@@ -1,11 +1,4 @@
-import { createRequire } from "module";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
-import { readFileSync } from "fs";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const modelsPath = join(__dirname, "models.json");
-const modelsData = JSON.parse(readFileSync(modelsPath, "utf-8"));
+import { modelsData } from "./modelsData.js";
 
 export const MODEL_DATA = modelsData;
 
