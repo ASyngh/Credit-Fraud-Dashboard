@@ -1,9 +1,14 @@
 {
   "version": 2,
+  "outputDirectory": "dist/public",
   "rewrites": [
     {
       "source": "/api/:path*",
       "destination": "https://credit-fraud-dashboard.onrender.com/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
